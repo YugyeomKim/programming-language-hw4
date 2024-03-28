@@ -49,6 +49,8 @@ let getNewVariableNotInList lst =
  * implement the substitution function [e'/x]e.
  *)
 let rec substitute (e' : Uml.exp) (x : string) (e : Uml.exp) =
+  (* Printf.printf "===sub: %s | %s | %s\n" (Inout.exp2string e') x
+     (Inout.exp2string e); *)
   match (e', x, e) with
   | e', x, Uml.Var y -> if x = y then e' else Uml.Var y
   | e', x, Uml.App (e1, e2) -> Uml.App (substitute e' x e1, substitute e' x e2)
@@ -63,13 +65,15 @@ let rec substitute (e' : Uml.exp) (x : string) (e : Uml.exp) =
  * implement a single step with reduction using the call-by-value strategy.
  *)
 let rec stepv e : Uml.exp =
+  (* Printf.printf "===Value of e: %s\n" (Inout.exp2string e); *)
   match e with
   | Uml.Var x -> raise Stuck
   | Uml.Lam (x, e) -> raise Stuck
   | Uml.App (Uml.Var x, e2) -> raise Stuck
+  | Uml.App (Uml.Lam (x, e1), Uml.Var y) -> substitute (Uml.Var y) x e1
   | Uml.App (Uml.Lam (x, e1), Uml.Lam (y, e2)) ->
       substitute (Uml.Lam (y, e2)) x e1
-  | Uml.App (Uml.Lam (x, e1), e2) -> Uml.App (e1, stepv e2)
+  | Uml.App (Uml.Lam (x, e1), e2) -> Uml.App (Uml.Lam (x, e1), stepv e2)
   | Uml.App (e1, e2) -> Uml.App (stepv e1, e2)
 
 let stepOpt stepf e = try Some (stepf e) with Stuck -> None
