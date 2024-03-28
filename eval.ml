@@ -50,22 +50,22 @@ let getNewVariableNotInList lst =
  *)
 let rec substitute (e' : Uml.exp) (x : string) (e : Uml.exp) =
   match (e', x, e) with
-  | e', x, Uml.Var y -> if x = y then e else Uml.Var y
-  | e', x, Uml.App (e1, e2) -> Uml.App (substitute e x e1, substitute e x e2)
+  | e', x, Uml.Var y -> if x = y then e' else Uml.Var y
+  | e', x, Uml.App (e1, e2) -> Uml.App (substitute e' x e1, substitute e' x e2)
   | e', x, Uml.Lam (y, e) ->
       if x = y then Uml.Lam (y, e)
-      else if List.mem y (fV e') then Uml.Lam (y, substitute e' x e)
-      else
+      else if List.mem y (fV e') then
         let z = getNewVariableNotInList ([ x ] @ [ y ] @ fV e' @ fV e) in
         Uml.Lam (z, substitute (variableSwap z y e') x e)
+      else Uml.Lam (y, substitute e' x e)
 
 (*
  * implement a single step with reduction using the call-by-value strategy.
  *)
 let rec stepv e : Uml.exp =
   match e with
-  | Uml.Var x -> e
-  | Uml.Lam (x, e) -> e
+  | Uml.Var x -> raise Stuck
+  | Uml.Lam (x, e) -> raise Stuck
   | Uml.App (Uml.Var x, e2) -> raise Stuck
   | Uml.App (Uml.Lam (x, e1), Uml.Lam (y, e2)) ->
       substitute (Uml.Lam (y, e2)) x e1
